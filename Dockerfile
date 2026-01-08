@@ -19,36 +19,33 @@ RUN npm run build
 # =========================
 FROM php:8.3-fpm
 
-# System deps
 RUN apt update && apt install -y \
     git curl unzip zip nano \
     libpng-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo_mysql pdo_pgsql zip
 
-# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Composer deps
-COPY composer.json composer.lock ./
+# 👉 СРАЗУ копируем весь проект
+COPY . .
+
+# 👉 Composer БЕЗ scripts
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
-    --no-interaction
+    --no-interaction \
+    --no-scripts
 
-# App source
-COPY . .
-
-# Frontend build → public/build
-COPY --from=node-builder /app/public/build ./public/build
-
-# Laravel optimizations
-RUN php artisan key:generate --force || true \
+# 👉 Теперь artisan существует
+RUN php artisan package:discover --ansi || true \
     && php artisan storage:link || true \
     && php artisan optimize || true
 
-# Permissions
+# 👉 Frontend build
+COPY --from=node-builder /app/public/build ./public/build
+
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
