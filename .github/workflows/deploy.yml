@@ -41,8 +41,8 @@ jobs:
           push: true
           no-cache: true
           tags: |
-            almuko/uibirzhasi-app:latest
-            almuko/uibirzhasi-app:${{ github.sha }}
+            almuko/jusup-app:latest
+            almuko/jusup-app:${{ github.sha }}
           build-args: |
             APP_BUILD=${{ github.sha }}
       - name: Deploy on VPS
