@@ -1,46 +1,36 @@
-name: CI/CD Deploy to VPS
+name: Deploy to VPS
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
-      - name: Install frontend deps
-        run: npm install
-        working-directory: .
-      - name: Build frontend
-        run: npm run build
-        working-directory: .
-      - name: Login Docker Hub
+      # 1️⃣ Забираем код
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Логинимся в Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build & Push
+
+      # 3️⃣ Собираем и пушим Docker image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
           push: true
           no-cache: true
-          tags: |
-            almuko/jusup-app:latest
-            almuko/jusup-app:${{ github.sha }}
-          build-args: |
-            APP_BUILD=${{ github.sha }}
+          tags: almuko/jusup-app:latest
+
+      # 4️⃣ Заходим на VPS и перезапускаем контейнеры
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -48,23 +38,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 40m
-          script_stop: true
           script: |
             set -e
             cd ${{ secrets.VPS_PATH }}
-            sed -i '/^APP_BUILD=/d' .env
-            echo "APP_BUILD=${{ github.sha }}" >> .env
+
             docker compose pull
             docker compose up -d --force-recreate
-            # 🧹 очистка старых образов (безопасно)
-            # Подождать пока Laravel поднимется
-            sleep 10
-
-            # Выполнить Laravel bootstrap
-            docker exec jusup_app php artisan migrate --force
-            docker exec jusup_app php artisan storage:link || true
-            docker exec jusup_app php artisan config:clear
-            docker exec jusup_app php artisan cache:clear
 
             docker image prune -f
