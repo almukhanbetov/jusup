@@ -58,4 +58,12 @@ jobs:
             docker compose pull
             docker compose up -d --force-recreate
             # 🧹 очистка старых образов (безопасно)
+            # Подождать пока Laravel поднимется
+            sleep 10
+
+            # Выполнить Laravel bootstrap
+            docker exec jusup_app php artisan migrate --force
+            docker exec jusup_app php artisan storage:link || true
+            docker exec jusup_app php artisan optimize
+
             docker image prune -f
