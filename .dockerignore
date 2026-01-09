@@ -1,0 +1,26 @@
+# Git
+.git
+.github
+
+# Node / frontend
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Vite / HMR
+/public/hot
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Env files (секреты должны идти через env в docker-compose)
+.env
+.env.*
+
+# Local docker & infra files
+docker-compose*.yml
+nginx.conf
+README.md
+tests
