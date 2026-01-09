@@ -64,6 +64,7 @@ jobs:
             # Выполнить Laravel bootstrap
             docker exec jusup_app php artisan migrate --force
             docker exec jusup_app php artisan storage:link || true
-            docker exec jusup_app php artisan optimize
+            docker exec jusup_app php artisan config:clear
+            docker exec jusup_app php artisan cache:clear
 
             docker image prune -f

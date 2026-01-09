@@ -29,7 +29,8 @@ RUN composer install \
 # 👉 Теперь artisan существует
 RUN php artisan package:discover --ansi || true \
     && php artisan storage:link || true \
-    && php artisan optimize || true
+    && php artisan config:clear || true \
+    && php artisan cache:clear || true
 
 # 👉 Frontend build
 COPY --from=node-builder /app/public/build ./public/build
